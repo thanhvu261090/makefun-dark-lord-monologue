@@ -1,17 +1,26 @@
-"""The Tired Dark Lord: A 100-Word Villain Monologue.
+#!/usr/bin/env python3
+"""The Tired Dark Lord: a 100-word villain monologue.
 
-Prints the entry monologue exactly as-is (no trailing newline) to
-stdout, and writes the same exact bytes to /output/entry.txt, after
-validating the entry against the bounty gate: UTF-8 text, 1-600
-characters, not only whitespace.
+Entry for the make.fun bounty of the same name. This program holds one
+fixed monologue, checks it against the bounty gate, and then prints it
+to stdout exactly as written -- no trailing newline, no extra text --
+and writes the identical bytes to /output/entry.txt.
 
-Stdlib only, no network. Run: python3 main.py
-Self-test: python3 main.py --self-test
+Python 3, standard library only, no network access.
+
+Usage:
+    python3 main.py              # print the monologue, write entry.txt
+    python3 main.py --self-test  # validate the entry and report counts
 """
 
 import os
 import sys
 
+# The entry: 102 words, 545 characters. The tiredness lives in the
+# voice, the rhythm and the small deflections, never in a plain claim
+# of weariness -- and the speaker is still a villain, with a scheme
+# (the crown, the curse, the surrender) and a history (three centuries
+# on the mountain).
 ENTRY = (
     "Heroes. You come here, torch in hand, monologue ready \u2014 as if I have "
     "not heard this exact speech four hundred times. Very well. The crown is "
@@ -23,47 +32,76 @@ ENTRY = (
     "don't. Either way, I am going to bed."
 )
 
+OUTPUT_PATH = "/output/entry.txt"
+EXPECTED_WORDS = 102
+EXPECTED_CHARS = 545
 
-def validate(text: str) -> None:
-    """Raise ValueError if the entry fails the bounty gate."""
+
+def check_entry(text):
+    """Validate one entry string against the bounty gate.
+
+    Raises ValueError with a plain message when the gate fails.
+    """
     if not isinstance(text, str):
         raise ValueError("entry must be a string")
-    text.encode("utf-8")  # must be valid UTF-8
-    if not 1 <= len(text) <= 600:
-        raise ValueError(f"entry length {len(text)} not in 1-600 characters")
+    text.encode("utf-8")  # raises if the text is not valid UTF-8
     if not text.strip():
         raise ValueError("entry must not be only whitespace")
+    if not 1 <= len(text) <= 600:
+        raise ValueError(
+            "entry is %d characters; the gate allows 1-600" % len(text)
+        )
 
 
-def main() -> None:
-    validate(ENTRY)
-    out_path = "/output/entry.txt"
-    os.makedirs(os.path.dirname(out_path), exist_ok=True)
-    with open(out_path, "w", encoding="utf-8", newline="") as f:
-        f.write(ENTRY)
-    # Print the monologue itself to stdout, byte for byte, no extra
-    # newline or status text on stdout (status goes to stderr).
+def word_count(text):
+    return len(text.split())
+
+
+def run():
+    """Validate the entry, write it to disk, print it to stdout."""
+    check_entry(ENTRY)
+    os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
+    with open(OUTPUT_PATH, "w", encoding="utf-8", newline="") as handle:
+        handle.write(ENTRY)
+    # Read the file back and make sure what landed on disk is byte for
+    # byte the entry we validated -- a partial or recoded write must
+    # fail loudly here instead of silently shipping a wrong entry.
+    with open(OUTPUT_PATH, "r", encoding="utf-8", newline="") as handle:
+        if handle.read() != ENTRY:
+            raise ValueError("entry.txt on disk does not match ENTRY")
+    # stdout carries the monologue alone, byte for byte; the status
+    # line goes to stderr so nothing else pollutes the output.
     sys.stdout.write(ENTRY)
     sys.stdout.flush()
     print(
-        f"wrote {out_path}: {len(ENTRY)} chars, {len(ENTRY.split())} words",
+        "wrote %s: %d chars, %d words"
+        % (OUTPUT_PATH, len(ENTRY), word_count(ENTRY)),
         file=sys.stderr,
     )
 
 
-def self_test() -> None:
-    validate(ENTRY)
-    assert len(ENTRY.split()) == 102, f"word count {len(ENTRY.split())}"
-    assert len(ENTRY) == 545, f"char count {len(ENTRY)}"
-    assert 1 <= len(ENTRY) <= 600
-    assert ENTRY.strip()
+def self_test():
+    """Run the entry checks and report the counts."""
+    check_entry(ENTRY)
+    words = word_count(ENTRY)
+    chars = len(ENTRY)
+    assert words == EXPECTED_WORDS, "word count is %d, expected %d" % (
+        words,
+        EXPECTED_WORDS,
+    )
+    assert chars == EXPECTED_CHARS, "char count is %d, expected %d" % (
+        chars,
+        EXPECTED_CHARS,
+    )
     assert ENTRY.encode("utf-8")
-    validate(ENTRY)
-    print("self-test passed: 102 words, 545 chars, UTF-8, no trailing newline")
+    print(
+        "self-test passed: %d words, %d chars, UTF-8, no trailing newline"
+        % (words, chars)
+    )
 
 
 if __name__ == "__main__":
     if "--self-test" in sys.argv:
         self_test()
     else:
-        main()
+        run()

@@ -14,10 +14,10 @@ Entry for the [make.fun bounty](https://make.fun/bounty/u-kevin-the-tired-dark-l
 
 ## How it works
 
-`main.py` (Python 3, stdlib only, no network) holds the single fixed entry string, validates it against the bounty gate — UTF-8 text, 1–600 characters, not only whitespace — then writes it exactly as-is, with no trailing newline, to `/output/entry.txt`.
+`main.py` (Python 3, stdlib only, no network) holds the single fixed entry string, validates it against the bounty gate — UTF-8 text, 1–600 characters, not only whitespace — then prints it exactly as-is, with no trailing newline, to stdout and writes the same exact bytes to `/output/entry.txt`.
 
 ```bash
-python3 main.py            # writes /output/entry.txt
+python3 main.py            # prints the monologue, writes /output/entry.txt
 python3 main.py --self-test
 ```
 

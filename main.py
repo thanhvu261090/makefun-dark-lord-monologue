@@ -1,8 +1,9 @@
 """The Tired Dark Lord: A 100-Word Villain Monologue.
 
-Writes the entry text exactly as-is (no trailing newline) to
-/output/entry.txt, after validating it against the bounty gate:
-UTF-8 text, 1-600 characters, not only whitespace.
+Prints the entry monologue exactly as-is (no trailing newline) to
+stdout, and writes the same exact bytes to /output/entry.txt, after
+validating the entry against the bounty gate: UTF-8 text, 1-600
+characters, not only whitespace.
 
 Stdlib only, no network. Run: python3 main.py
 Self-test: python3 main.py --self-test
@@ -40,16 +41,23 @@ def main() -> None:
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     with open(out_path, "w", encoding="utf-8", newline="") as f:
         f.write(ENTRY)
-    print(f"wrote {out_path}: {len(ENTRY)} chars, {len(ENTRY.split())} words")
+    # Print the monologue itself to stdout, byte for byte, no extra
+    # newline or status text on stdout (status goes to stderr).
+    sys.stdout.write(ENTRY)
+    sys.stdout.flush()
+    print(
+        f"wrote {out_path}: {len(ENTRY)} chars, {len(ENTRY.split())} words",
+        file=sys.stderr,
+    )
 
 
 def self_test() -> None:
     validate(ENTRY)
     assert len(ENTRY.split()) == 102, f"word count {len(ENTRY.split())}"
+    assert len(ENTRY) == 545, f"char count {len(ENTRY)}"
     assert 1 <= len(ENTRY) <= 600
     assert ENTRY.strip()
     assert ENTRY.encode("utf-8")
-    # round-trip: no trailing newline, exact bytes
     validate(ENTRY)
     print("self-test passed: 102 words, 545 chars, UTF-8, no trailing newline")
 
